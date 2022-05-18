@@ -1,0 +1,23 @@
+# root@cs1
+
+$ timedatectl set-ntp no
+$ timedatectl set-time "2021-12-23 15:47"
+$ timedatectl set-ntp yes
+$ timedatectl status
+$  for i in {106..111};do ssh root@10.10.70.$i "timedatectl set-ntp no && timedatectl set-time '2021-12-23 15:48' && timedatectl set-ntp yes";done
+
+$ grep ^server  /etc/chrony.conf     
+server 10.10.70.106 iburst
+
+$ for i in {106..112};do scp /etc/chrony.conf  root@10.10.70.$i:/etc/chrony.conf;done
+$ for i in {106..112};do ssh root@10.10.70.$i "timedatectl set-timezone Asia/Shanghai";done
+
+# 再次修改chronyd.conf 的配置
+# 参考 1-03-ntpserver.txt
+
+$ for i in {106..112};do ssh root@10.10.70.$i "timedatectl set-ntp no && timedatectl set-ntp on";done
+# 检查时间信息
+$ for i in {106..112};do ssh root@10.10.70.$i "timedatectl status";done
+
+
+

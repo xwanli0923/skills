@@ -1,0 +1,36 @@
+[root@cs6 ~]# yum -y install iscsi-initiator-utils device-mapper-multipath
+[root@cs6 ~]# cat /etc/iscsi/initiatorname.iscsi
+InitiatorName=iqn.2021-12.com.skills:client
+
+
+
+[root@cs6 ~]# vim /etc/iscsi/iscsid.conf 
+# *************
+# CHAP Settings
+# *************
+
+node.session.auth.authmethod = CHAP
+node.session.auth.username = IncomingUser
+node.session.auth.password = IncomingPass
+node.session.auth.username_in = OutgoingUser
+node.session.auth.password_in = OutgoingPass
+discovery.sendtargets.auth.authmethod = CHAP
+discovery.sendtargets.auth.username = IncomingUser
+discovery.sendtargets.auth.password = IncomingPass
+discovery.sendtargets.auth.username_in = OutgoingUser
+discovery.sendtargets.auth.password_in = OutgoingPass
+
+[root@cs6 ~]# man iscsiadm
+EXAMPLES
+       Discover targets at a given IP address:
+
+              iscsiadm --mode discoverydb --type sendtargets --portal 192.168.1.10 --discover
+
+       Login, must use a node record id found by the discovery:
+
+              iscsiadm --mode node --targetname iqn.2001-05.com.doe:test --portal 192.168.1.1:3260 --login
+
+[root@cs6 ~]# iscsiadm --mode discoverydb --type sendtargets --portal 10.10.70.110 --discover
+[root@cs6 ~]# iscsiadm --mode discoverydb --type sendtargets --portal 10.10.80.104 --discover
+
+              

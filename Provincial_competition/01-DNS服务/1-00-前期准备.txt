@@ -1,0 +1,1 @@
+先做 1-05-ssh-keygen.txt 中的步骤

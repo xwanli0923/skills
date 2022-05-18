@@ -1,0 +1,8 @@
+
+# root@cs1
+
+$ for i in {106..112};do ssh root@10.10.70.$i "systemctl enable firewalld && systemctl start firewalld";don
+$ firewall-cmd --permanent --add-port=123/udp
+$ firewall-cmd --reload
+
+

@@ -1,0 +1,45 @@
+[root@cs5 ~]# vgcreate vg1 /dev/vd{b..e}
+
+[root@cs5 ~]# lvcreate -n lv1 -l 100%FREE vg1
+
+[root@cs5 ~]# mkfs.ext4 /dev/vg1/lv1
+
+[root@cs5 ~]# nmcli connection show | grep ens10
+Wired connection 1  d50f179f-0001-31aa-9264-6ee7156e8b99  ethernet  ens10  
+[root@cs5 ~]# ip addr show ens10
+3: ens10: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether fa:16:3e:13:c2:93 brd ff:ff:ff:ff:ff:ff
+    inet 10.10.80.104/24 brd 10.10.80.255 scope global dynamic noprefixroute ens10
+       valid_lft 86113sec preferred_lft 86113sec
+    inet6 fe80::9712:daae:bb22:82a7/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+[root@cs5 ~]# nmcli connection modify 'Wired connection 1' ipv4.addresses '10.10.80.104/24' ipv4.method manual
+[root@cs5 ~]# nmcli connection reload 
+[root@cs5 ~]# nmcli connection up 'Wired connection 1' 
+
+[root@cs5 ~]# yum -y install targetcli
+[root@cs5 ~]# systemctl enable target --now
+
+[root@cs5 ~]# targetcli
+/> /backstores/block create name=tgt dev=/dev/vg1/lv1 
+/> cd /iscsi 
+/iscsi> create wwn=iqn.2021-12.com.skills:server
+/iscsi> cd iqn.2021-12.com.skills:server/tpg1/
+/iscsi> set discovery_auth enable=1 userid=IncomingUser password=IncomingPass mutual_userid=OutgoingUser mutual_password=OutgoingPass
+/iscsi/iqn.20...s:server/tpg1> set attribute authentication=1
+/iscsi/iqn.20...s:server/tpg1> set auth userid=IncomingUser password=IncomingPass mutual_userid=OutgoingUser mutual_password=OutgoingPass        
+
+/iscsi/iqn.20...s:server/tpg1> luns/  create /backstores/block/tgt 
+
+/iscsi/iqn.20...s:server/tpg1> acls/ create wwn=iqn.2021-12.com.skills:client
+/iscsi/iqn.20...s:server/tpg1> acls/iqn.2021-12.com.skills:client set auth userid=IncomingUser password=IncomingPass mutual_userid=OutgoingUser mutual_password=OutgoingPass
+
+/iscsi/iqn.20...s:server/tpg1> portals/ delete 0.0.0.0 3260
+/iscsi/iqn.20...s:server/tpg1> portals/ create 10.10.70.110 3260
+/iscsi/iqn.20...s:server/tpg1> portals/ create 10.10.80.104 3260  
+/iscsi/iqn.20...s:server/tpg1> cd /
+/> saveconfig 
+/> exit
+
+[root@cs5 ~]# firewall-cmd --permanent --add-port=3260/tcp
+[root@cs5 ~]# firewall-cmd --reload 

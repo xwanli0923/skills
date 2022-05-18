@@ -1,0 +1,82 @@
+## 创建ssh密钥对，创建ssh互信
+# root@cs1
+
+$ ssh-keygen
+$ ssh-copy-id root@localhost
+
+# 前期根据实例的地址进行分发ssh公钥
+$ for i in {106..112};do scp -r .ssh root@10.10.70.$i:/root/;done
+
+$ mkdir /opt/dvd
+# 使用 SecureCRT 的 SFTP 功能将 CentOS8的镜像上传到/opt
+$ mount /opt/CentOS-8.3.2011-x86_64-dvd1.iso  /opt/dvd
+
+# 实现永久挂载
+$ echo "/opt/CentOS-8.3.2011-x86_64-dvd1.iso /opt/dvd  iso9660 defaults 0 0" >> /etc/fstab   
+
+# 根据实际情况是否需要配置 yum repos
+# 假如 cs1.skills.com 的ip地址为 10.10.70.106
+# yum repo 样例
+$ vim /etc/yum.repos.d/CentOS-local.repo 
+[CentOS8-AppStream]
+baseurl = file:///opt/dvd/AppStream
+gpgcheck = 0
+name = CentOS 8 X86_64 DVD AppStream
+
+[CentOS8-BaseOS]
+baseurl = file:///opt/dvd/BaseOS
+gpgcheck = 0
+name = CentOS 8 X86_64 DVD BaseOS
+
+$ yum -y install httpd
+$ ln -sf /opt/dvd  /var/www/html/dvd
+$ systemctl enable httpd --now
+$ firewall-cmd --permanent --add-port=80/tcp
+$ firewall-cmd --reload
+
+# 修改 CentOS-local.repo 文件
+[CentOS8-AppStream]
+baseurl = http://10.10.70.106/dvd/AppStream
+gpgcheck = 0
+name = CentOS 8 X86_64 DVD AppStream
+
+[CentOS8-BaseOS]
+baseurl = http://10.10.70.106/dvd/BaseOS
+gpgcheck = 0
+name = CentOS 8 X86_64 DVD BaseOS
+
+# 测试
+$ yum -y install bash-com* 
+
+# 没问题后将仓库发送给其他系统
+$ for i in {107..111};do scp CentOS-local.repo  root@10.10.70.$i:/etc/yum.repos.d/;done
+$ for i in {107..111};do ssh root@10.10.70.$i "mv /etc/yum.repos.d/CentOS-Linux* /tmp/";done
+
+# 安装命令补齐和vim编辑器
+$ for i in {106..111};do ssh root@10.10.70.$i "yum -y install vim bash-com*";done
+# 安装之后，退出用户并重新登录
+
+## 配置所有主机的地址
+# 实验时，我的 Linux1 - Linux7 实例的地址为 106 - 112 
+# 主机为 cs1-cs7  而 106-105=1
+
+# 查看网卡名称
+$ for hosts in {106..112}};do ssh root@10.10.70.$i "ip link ls | grep -v lo ";done
+# 输出的信息显示 网卡名为 ens3
+
+# 查看网卡对应的连接名
+$ for hosts in {106..112};do ssh root@10.10.70.$hosts "nmcli con show | grep ens3";done
+
+# 生成固定IP配置文件
+$ for hosts in {106..112};do ssh root@10.10.70.$hosts "nmcli connection modify ens3 ipv4.addresses  10.10.70.$hosts/24 ipv4.gateway 10.10.70.254 ipv4.dns '10.10.70.106 10.10.70.107' ipv4.method manual && nmcli con reload && nmcli con up ens3";done
+
+# 生成主机名
+for hosts in {106..112};do ssh root@10.10.70.$hosts "hostnamectl set-hostname cs$(($hosts-105)).skills.com";done
+
+## 关闭所有主机的 SELinux
+$ vim /etc/selinux/config
+SELINUX=permissive
+$ for hosts in {106..112};do scp /etc/selinux/config root@10.10.70.$i:/etc/selinux/config;done
+$ for hosts in {106..112};do ssh root@10.10.70.$hosts "setenforce 0";done
+
+

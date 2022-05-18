@@ -1,0 +1,67 @@
+# 可以放弃 Kerberos nfs 
+
+[root@cs3 ~]# yum -y install ypserv yp-tools rpcbind -y
+
+[root@cs3 ~]# cat /etc/sysconfig/network
+# Created by anaconda
+NISDOMAIN=skills.com
+YPSERV_ARGS="-p 1020"
+
+[root@cs3 ~]# vim /etc/rc.d/rc.local
+NISDOMAIN=skills.com
+
+[root@cs3 ~]# chmod +x /etc/rc.d/rc.local
+
+
+[root@cs3 ~]# vim /etc/ypserv.conf 
+[root@cs3 ~]# tail -n 1 /etc/ypserv.conf
+ *                        : *       : *                : none
+
+
+[root@cs3 ~]# systemctl enable ypserv --now
+
+[root@cs3 ~]# useradd user1 
+[root@cs3 ~]# useradd user2
+
+[root@cs3 ~]# /usr/lib64/yp/ypinit -m
+
+At this point, we have to construct a list of the hosts which will run NIS
+servers.  cs3.skills.com is in the list of NIS server hosts.  Please continue to add
+the names for the other hosts, one per line.  When you are done with the
+list, type a <control D>.
+        next host to add:  cs3.skills.com
+        next host to add:  
+The current list of NIS servers looks like this:
+
+cs3.skills.com
+
+Is this correct?  [y/n: y]  y
+We need a few minutes to build the databases...
+Building /var/yp/skills.com/ypservers...
+Running /var/yp/Makefile...
+gmake[1]: Entering directory '/var/yp/skills.com'
+Updating passwd.byname...
+Updating passwd.byuid...
+Updating group.byname...
+Updating group.bygid...
+Updating hosts.byname...
+Updating hosts.byaddr...
+Updating rpc.byname...
+Updating rpc.bynumber...
+Updating services.byname...
+Updating services.byservicename...
+Updating netid.byname...
+Updating protocols.bynumber...
+Updating protocols.byname...
+Updating mail.aliases...
+gmake[1]: Leaving directory '/var/yp/skills.com'
+
+cs3.skills.com has been set up as a NIS master server.
+
+Now you can run ypinit -s cs3.skills.com on all slave server.
+
+
+
+[root@cs3 ~]# firewall-cmd --add-port=1020/tcp --permanent 
+fsuccess
+[root@cs3 ~]# firewall-cmd --reload 

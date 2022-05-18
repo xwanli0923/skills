@@ -1,0 +1,52 @@
+
+tomcat 
+[root@cs3 ~]# tar -xf apache-tomcat-10.0.14.tar.gz 
+[root@cs3 ~]# mv apache-tomcat-10.0.14 /usr/local/tomcat
+[root@cs3 ~]# cd /usr/local/tomcat/
+[root@cs3 ~]# yum -y install java-1.8.0
+
+[root@cs3 ~]# vim /usr/local/tomcat/conf/server.xml 
+
+ 68     <Connector port="80" protocol="HTTP/1.1"
+ 69                connectionTimeout="20000"
+ 70                redirectPort="443" />
+
+ 85     <Connector port="443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+ 86                maxThreads="150" SSLEnabled="true">
+ 87         <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
+ 88         <SSLHostConfig>
+ 89             <Certificate certificateKeystoreFile="conf/skills.jks" certificateKeystorePassword="Password1234#" certificateKeyAlias="alias"
+ 90                          type="RSA" />
+ 91         </SSLHostConfig>
+ 92     </Connector>
+
+[root@cs3 ~]# cp -v /root/skills.jks /usr/local/tomcat/conf/
+
+[root@cs3 ~]# firewall-cmd --permanent --add-port=80/tcp
+success
+[root@cs3 ~]# firewall-cmd --permanent --add-port=443/tcp
+success
+[root@cs3 ~]# firewall-cmd --reload
+success
+[root@cs3 ~]# /usr/local/tomcat/bin/startup.sh               
+
+[root@cs3 ~]# cp /usr/local/tomcat/webapps/ROOT/index.jsp{,.bak}
+[root@cs3 ~]# echo 'TomcatOne' > /usr/local/tomcat/webapps/ROOT/index.jsp
+[root@cs3 ~]# /usr/local/tomcat/bin/startup.sh 
+[root@cs3 ~]# scp -r /usr/local/tomcat root@cs4:/usr/local/tomcat
+
+[root@cs4 ~]# yum -y install java-1.8.0
+[root@cs4 ~]# echo "TomcatTwo" > /usr/local/tomcat/webapps/ROOT/index.jsp
+[root@cs4 ~]# firewall-cmd --permanent --add-port=80/tcp
+success
+[root@cs4 ~]# firewall-cmd --permanent --add-port=443/tcp
+success
+[root@cs4 ~]# firewall-cmd --reload
+success
+[root@cs4 ~]# /usr/local/tomcat/bin/startup.sh               
+
+
+
+[root@cs3 ~]
+
+

@@ -1,0 +1,47 @@
+[root@cs2 ~]# mkdir -p /share/ShareManager
+[root@cs2 ~]# chgrp -R manager /share
+[root@cs2 ~]# chmod 3770  /share/ShareManager
+[root@cs2 ~]# ls -ld /share/ShareManager
+drwxrws--T. 2 root manager 6 Dec 23 18:29 /share/ShareManager
+
+[root@cs2 ~]# cd /etc/samba/
+[root@cs2 samba]# cp smb.conf{,.bak}
+[root@cs2 samba]# tail -n 6 smb.conf
+[global]
+        workgroup = SKILLS.COM
+        security = user
+
+        passdb backend = tdbsam
+
+        printing = cups
+        printcap name = cups
+        load printers = yes
+        cups options = raw
+        hosts allow = 127. 10.10.70.
+
+[ShareManager]
+        comment = ShareManager
+        path = /share/ShareManager
+        browseable = yes
+        writable = yes
+        write list = +manager
+
+[root@cs2 samba]# systemctl enable smb nmb --now
+
+
+[root@cs2 samba]# cat /usr/lib/firewalld/services/samba.xml 
+<?xml version="1.0" encoding="utf-8"?>
+<service>
+  <short>Samba</short>
+  <description>This option allows you to access and participate in Windows file and printer sharing networks. You need the samba package installed for this option to be useful.</description>
+  <port protocol="udp" port="137"/>
+  <port protocol="udp" port="138"/>
+  <port protocol="tcp" port="139"/>
+  <port protocol="tcp" port="445"/>
+
+
+[root@cs2 samba]# firewall-cmd --add-port=137/udp --add-port=138/udp --add-port=139/tcp --add-port=445/tcp --permanent 
+[root@cs2 samba]# firewall-cmd --reload 
+
+测试
+[root@cs2 ~]# smbclient  -L //localhost/ShareManager -U manager1

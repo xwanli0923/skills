@@ -1,0 +1,23 @@
+[root@cs4 ~]# yum -y install python3
+[root@cs4 ~]# vim /root/CreateFile.py
+#!/bin/python3
+import os
+import string
+import shutil
+path_test_dir="/root/test"
+
+if os.path.exists(path_test_dir):
+   shutil.rmtree(path_test_dir)
+   os.makedirs('/root/test')
+   print('/root/test create successful')
+else:   
+   os.makedirs('/root/test')
+   print('/root/test create secussfull')
+
+os.chdir(path_test_dir)
+
+for li in range(20):
+   name=(str(li).rjust(2,'0'))
+   f = open('File'+name,"a")
+   f.write('File'+name)
+   f.close()

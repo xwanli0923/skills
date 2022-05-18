@@ -1,0 +1,66 @@
+[root@cs3 ~]# yum module install postgresql:10
+[root@cs3 ~]# postgresql-setup initdb
+[root@cs3 ~]# systemctl enable postgresql.service 
+[root@cs3 ~]# systemctl start postgresql.service 
+[root@cs3 ~]# su - postgres 
+[postgres@cs3 ~]$ psql 
+[postgres@cs3 ~]$ psql 
+psql (10.14)
+Type "help" for help.
+
+postgres=# alter user postgres with password 'Password1234#';
+postgres-# \du
+                                   List of roles
+ Role name |                         Attributes                         | Member of 
+-----------+------------------------------------------------------------+-----------
+ postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+
+postgres-# \l
+                                  List of databases
+   Name    |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges   
+-----------+----------+----------+-------------+-------------+-----------------------
+ postgres  | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+ template0 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
+           |          |          |             |             | postgres=CTc/postgres
+ template1 | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | =c/postgres          +
+           |          |          |             |             | postgres=CTc/postgres
+(3 rows)
+
+postgres=# CREATE DATABASE userdb;
+
+postgres-# \q            
+
+
+[root@cs3 ~]# vim /var/lib/pgsql/data/postgresql.conf 
+ 59 listen_addresses = '*'          # what IP address(es) to listen on;
+ 60                                         # comma-separated list of addresses;
+ 61                                         # defaults to 'localhost'; use '*' for all
+ 62                                         # (change requires restart)
+ 63 port = 5432                             # (change requires restart)
+ 64 max_connections = 100                   # (change requires restart)   
+
+ 88 password_encryption = md5               # md5 or scram-sha-256      
+
+
+[root@cs3 ~]# tail -n 1 /var/lib/pgsql/data/pg_hba.conf
+host    all             all             0.0.0.0/0               md5
+
+[root@cs3 ~]# systemctl restart postgresql.service 
+
+
+[root@cs3 ~]# psql -U postgres -h 10.10.70.108 -d userdb 
+userdb=# create table userinfo (id serial primary key,name varchar(10),birthday date,password varchar(60));
+userdb=# INSERT INTO userinfo VALUES (1,'user1','1995-7-1',md5('user1'));
+userdb=# INSERT INTO userinfo VALUES (2,'user2','1995-9-1',md5('user2'));
+userdb=# select * from userinfo;
+ id | name  |  birthday  |             password             
+----+-------+------------+----------------------------------
+  1 | user1 | 1995-07-01 | 24c9e15e52afc47c225b757e7bee1f9d
+  2 | user2 | 1995-09-01 | 7e58d63b60197ceb55a1c487989a3720
+(2 rows)
+
+userdb=# \q
+
+
+[root@cs3 ~]# pg_dump -U postgres -h 10.10.70.108 -d  userdb > /var/local/postgresqlbak/userdb.sql
+Password: 

@@ -1,0 +1,159 @@
+配置CA机构
+[root@cs1 ~]# cp -v /etc/pki/tls/openssl.cnf{,.bak}
+[root@cs1 ~]# grep basic /etc/pki/tls/openssl.cnf
+basicConstraints=CA:FALSE
+basicConstraints = CA:FALSE
+basicConstraints = critical,CA:true
+# basicConstraints= critical, DER:30:03:01:01:FF
+basicConstraints=CA:FALSE
+[root@cs1 ~]# sed -i /basicConstraints/s/FALSE/TRUE/g /etc/pki/tls/openssl.cnf
+[root@cs1 ~]# grep basic /etc/pki/tls/openssl.cnf                             
+basicConstraints=CA:TRUE
+basicConstraints = CA:TRUE
+basicConstraints = critical,CA:true
+# basicConstraints= critical, DER:30:03:01:01:FF
+basicConstraints=CA:TRUE
+
+[root@cs1 ~]# cd /etc/pki/tls/
+
+[root@cs1 tls]# openssl genrsa -out cs1-ca.key -des3 2048
+Generating RSA private key, 2048 bit long modulus (2 primes)
+.................+++++
+.........................................................................+++++
+e is 65537 (0x010001)
+Enter pass phrase for cs1-ca.key:  [Password1234#]
+Verifying - Enter pass phrase for cs1-ca.key: [Password1234#]
+
+[root@cs1 tls]# openssl req -new -x509 -key cs1-ca.key -days 3650 -out cs1-ca.crt
+Enter pass phrase for cs1-ca.key:
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [XX]:CN
+State or Province Name (full name) []:Beijing
+Locality Name (eg, city) [Default City]:Beijing
+Organization Name (eg, company) [Default Company Ltd]:Skills
+Organizational Unit Name (eg, section) []:System
+Common Name (eg, your name or your server's hostname) []:skills.com
+Email Address []:
+
+
+[root@cs1 tls]# vim /etc/pki/tls/openssl.cnf
+ 69 certificate     = $dir/cs1-ca.crt
+ 74 private_key     = $dir/cs1-ca.key 
+ 91 default_days    = 3650
+
+[root@cs1 tls]# mkdir -p /etc/pki/CA/{newcerts,certs}
+[root@cs1 tls]# touch /etc/pki/CA/index.txt
+[root@cs1 tls]# echo 00 > /etc/pki/CA/serial
+[root@cs1 tls]# cp -v cs1-ca.* /etc/pki/CA/
+
+[root@cs1 tls]# ls /etc/pki/CA/
+certs  cs1-ca.crt  cs1-ca.key  index.txt  newcerts  serial
+
+
+# 生成 csr 证书
+
+[root@cs1 ~]# openssl genrsa -out skills.key 2048
+Generating RSA private key, 2048 bit long modulus (2 primes)
+..+++++
+...................................+++++
+e is 65537 (0x010001)
+[root@cs1 ~]# ls
+anaconda-ks.cfg  skills.key
+[root@cs1 ~]# openssl req -new -key skills.key -out skills.csr
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [XX]:CN
+State or Province Name (full name) []:Beijing
+Locality Name (eg, city) [Default City]:Beijing
+Organization Name (eg, company) [Default Company Ltd]:Skills
+Organizational Unit Name (eg, section) []:System
+Common Name (eg, your name or your server's hostname) []:skills.com
+Email Address []:
+
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:      
+An optional company name []:
+
+
+# 签名
+[root@cs1 CA]# cp /root/skills.* /etc/pki/CA/
+[root@cs1 CA]# openssl ca -in skills.csr -out certs/skills.crt
+Using configuration from /etc/pki/tls/openssl.cnf
+Enter pass phrase for /etc/pki/CA/cs1-ca.key:
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+        Serial Number: 0 (0x0)
+        Validity
+            Not Before: Dec 24 02:26:14 2021 GMT
+            Not After : Dec 22 02:26:14 2031 GMT
+        Subject:
+            countryName               = CN
+            stateOrProvinceName       = Beijing
+            organizationName          = Skills
+            organizationalUnitName    = System
+            commonName                = skills.com
+        X509v3 extensions:
+            X509v3 Basic Constraints: 
+                CA:TRUE
+            Netscape Comment: 
+                OpenSSL Generated Certificate
+            X509v3 Subject Key Identifier: 
+                28:CA:D0:44:F4:1E:D6:25:3C:7A:85:57:4E:85:2D:92:C7:01:C4:32
+            X509v3 Authority Key Identifier: 
+                keyid:1E:92:05:BB:FC:03:D7:8F:19:25:34:04:EA:F1:EB:B9:55:F8:CD:E0
+
+Certificate is to be certified until Dec 22 02:26:14 2031 GMT (3650 days)
+Sign the certificate? [y/n]:y
+
+
+1 out of 1 certificate requests certified, commit? [y/n]y
+Write out database with 1 new entries
+Data Base Updated
+[root@cs1 CA]# ls newcerts/
+00.pem
+[root@cs1 CA]# ls
+certs  cs1-ca.crt  cs1-ca.key  index.txt  index.txt.attr  index.txt.old  newcerts  serial  serial.old  skills.csr  skills.key
+[root@cs1 CA]# ls certs/
+skills.crt
+
+## skills.crt 用于 nginx
+
+
+========================可 以 放 弃============================
+# 将 skills.crt 转变为 jks 证书,用于 tomcat 的题, 可以放弃
+[root@cs1 CA]# scp certs/skills.crt  skills.key  root@cs3.skills.com:~
+
+
+[root@cs3 ~]# openssl pkcs12 -export -in skills.crt -inkey skills.key -out skills.p12 -name "alias"
+Enter Export Password:
+Verifying - Enter Export Password:
+
+
+# 可以 man keytool    ->    /examples  ->
+# 简单修改即可
+# eg: 
+# keytool -importkeystore  -srckeystore skills.p12 -destkeystore  skills.jks  -srcstoretype JKS -deststoretype PKCS12  -srcstorepass 'Password1234#' -deststorepass 'Password1234#'
+
+[root@cs3 ~]# keytool -importkeystore -srckeystore skills.p12 -destkeystore skills.jks -deststoretype pkcs12
+Importing keystore skills.p12 to skills.jks...
+Enter destination keystore password:  
+Re-enter new password: 
+Enter source keystore password:  
+Entry for alias alias successfully imported.
+Import command completed:  1 entries successfully imported, 0 entries failed or cancelled
+
+======================================================================================
+继续查看 5-01-tomcat.txt  SSL/TLS 部分

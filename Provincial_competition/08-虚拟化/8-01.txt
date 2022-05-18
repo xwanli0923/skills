@@ -1,0 +1,20 @@
+[root@cs2 ~]# cd path  # path 代表的是 docker 软件所在的目录
+[root@cs2 ~]# yum remove podman* -y
+[root@cs2 ~]# yum remove buildah* -y
+[root@cs2 ~]# yum localinstall *.rpm -y
+[root@cs2 ~]# yum -y install httpd
+[root@cs2 ~]# systemctl cat httpd.service |grep -i Start
+[root@cs2 ~]# systemctl enable --now docker 
+[root@cs2 ~]# docker version
+[root@cs2 ~]# docker run -itd -v /etc/yum.repos.d/:/etc/yum.repos.d/:Z -v /media/:/var/www:Z -p 80:80 --name skills centos-8-container-8.3.2011-20201204.2.x86_64:latest bash 
+[root@cs2 ~]# docker exec -it skills bash
+[root@d62b87fafc7e /]# yum -y install httpd
+[root@d62b87fafc7e /]# systemctl enable httpd
+[root@d62b87fafc7e /]# httpd  -DFOREGROUND &
+[root@d62b87fafc7e /]# exit
+[root@cs2 ~]# echo HelloContainer > /media/html/index.html
+
+[root@cs2 ~]# firewall-cmd --permanent --add-port=80/tcp
+success
+[root@cs2 ~]# firewall-cmd --reload 
+success      

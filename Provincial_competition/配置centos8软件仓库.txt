@@ -1,0 +1,26 @@
+配置centos8软件仓库
+root@yum_server
+
+$ mkdir -p /opt/CentOS8-x86_64-dvd
+# 在windows将iso镜像装在，利用 secureCRT 的sftp 上传镜像所有文件到  /opt/Centos-x86_64-dvd
+
+$ mv /etc/yum.repods.d/* /tmp/
+$ vim /etc/yum.repos.d/CentOS-file.repo
+cat /etc/yum.repos.d/CentOS-local.repo 
+[CentOS8-AppStream]
+baseurl = file:///opt/CentOS8-x86_64-dvd/AppStream
+gpgcheck = 0
+name = CentOS 8 X86_64 DVD AppStream
+
+[CentOS8-BaseOS]
+baseurl = file:///opt/CentOS8-x86_64-dvd/BaseOS
+gpgcheck = 0
+name = CentOS 8 X86_64 DVD BaseOS
+
+$ yum -y install httpd
+$ ln -sf  /opt/CentOS8-x86_64-dvd/  /var/www/html/
+$ systemctl enable httpd --now
+$ firewall-cmd --add-service=http
+$ firewall-cmd --runtime-to-permanent
+
+客户端访问 http://yum_server/CentOS-x86_64-dvd即可

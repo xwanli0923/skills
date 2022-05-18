@@ -1,0 +1,39 @@
+
+[root@cs1 ~]# yum module install nginx
+[root@cs1 ~]# vim /etc/nginx/nginx.conf
+ 38     server {
+ 39         listen       80 default_server;
+ 40         listen       [::]:80 default_server;
+ 41         server_name  cs1.skills.com;
+ 42         rewrite ^(.*)$ https://cs1.skills.com;
+ 43         root         /usr/share/nginx/html;
+ 44 
+ 45         # Load configuration files for the default server block.
+ 46         include /etc/nginx/default.d/*.conf;
+ 47 
+ 48         location / {
+ 49           index index.html;
+ 50         }
+
+ 58         
+
+61     server {
+ 62         listen       443 ssl http2 default_server;
+ 63         listen       [::]:443 ssl http2 default_server;
+ 64         server_name  cs1.skills.com;
+ 65         root         /usr/share/nginx/html;
+ 66 #
+ 67         ssl_certificate "/etc/ssl/skills.crt";
+ 68         ssl_certificate_key "/etc/ssl/skills.key";
+
+ 87     }
+ 88 
+ 89 }
+
+[root@cs1 ~]# cp /etc/pki/CA/certs/skills.crt  /etc/pki/CA/skills.key /etc/ssl/
+[root@cs1 ~]# ls /etc/ssl/
+certs  skills.crt  skills.key
+
+[root@cs1 ~]# echo "HelloNginx" > /usr/share/nginx/html/index.html 
+
+[root@cs1 ~]# systemctl enable nginx.service --now 

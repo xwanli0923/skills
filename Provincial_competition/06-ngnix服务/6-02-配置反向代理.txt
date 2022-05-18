@@ -1,0 +1,27 @@
+[root@cs1 nginx]# tail -n 1 /var/named/skills.com
+tomcat A 10.10.70.106
+
+[root@cs1 nginx]# systemctl restart named
+[root@cs1 nginx]# vim nginx.conf
+
+ 61     upstream tomcat {
+ 62       server cs3.skills.com:443;
+ 63       server cs4.skills.com:443;
+ 64     }
+ 65 
+ 66     server {
+ 67         listen       443;
+ 68         server_name  tomcat.skills.com;
+ 69 
+ 70        # location / {
+ 71        #     root   html;
+ 72        #     index  index.html index.htm;
+ 73        # }
+ 74 
+ 75         location / {
+ 76             proxy_pass   https://tomcat;
+ 77            # rewrite ^(.*)$ https://tomcat.skills.com;
+ 78         }
+ 79     }
+
+ [root@cs1 nginx]# systemctl restart nginx.service 

@@ -1,0 +1,13 @@
+# 配置 chronyd 服务器
+# root@cs1
+$ vim /etc/chrony.conf 
+3 server 10.10.70.106 iburst
+23 allow 10.10.70.0/24
+26 local stratum 5
+
+
+$ systemctl restart chronyd
+
+
+
+$ for i in {106..112};do ssh root@10.10.70.$i "systemctl restart chronyd && chronyc sources";done 

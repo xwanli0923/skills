@@ -1,0 +1,85 @@
+[root@cs1 ~]# yum -y install bind  bind-utils
+
+$ vim /etc/named.conf
+ 10 options {
+ 11         listen-on port 53 { any; };
+ 12         listen-on-v6 port 53 { any; };
+ 13         directory       "/var/named";
+ 14         dump-file       "/var/named/data/cache_dump.db";
+ 15         statistics-file "/var/named/data/named_stats.txt";
+ 16         memstatistics-file "/var/named/data/named_mem_stats.txt";
+ 17         secroots-file   "/var/named/data/named.secroots";
+ 18         recursing-file  "/var/named/data/named.recursing";
+ 19         allow-query     { any; };
+
+
+[root@cs1 ~]# cat /etc/named.rfc1912.zones
+
+zone "skills.com" IN {
+        type master;
+        file "skills.com";
+        allow-update { none; };
+};
+
+zone "70.10.10.in-addr.arpa" IN {
+        type master;
+        file "70.10.10.in-addr.arpa";
+        allow-update { none; };
+};
+
+[root@cs1 ~]# touch /var/named/skills.com
+[root@cs1 ~]# touch /var/named/70.10.10.in-addr.arpa
+[root@cs1 named]# cat named.localhost > skills.com    
+
+
+[root@cs1 named]# cat skills.com 
+$TTL 1D
+@       IN SOA  @ admin.skills.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+        NS      cs1.skills.com.
+;       A       127.0.0.1
+;       AAAA    ::1
+cs1  A 10.10.70.106
+cs2  A 10.10.70.107
+cs3  A 10.10.70.108
+cs4  A 10.10.70.109
+cs5  A 10.10.70.110
+cs6  A 10.10.70.111
+cs7  A 10.10.70.112
+
+
+[root@cs1 named]# cat named.loopback > 70.10.10.in-addr.arpa 
+[root@cs1 named]# cat skills.com >> 70.10.10.in-addr.arpa
+
+$ vim 70.10*.arpa
+[root@cs1 named]# cat 70.10.10.in-addr.arpa 
+$TTL 1D
+@       IN SOA  @ admin.skills.com. (
+                                        0       ; serial
+                                        1D      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+        NS      cs1.skills.com.
+
+10.10.70.106  PTR cs1.skills.com.
+10.10.70.107  PTR cs2.skills.com.
+10.10.70.108  PTR cs3.skills.com.
+10.10.70.109  PTR cs4.skills.com.
+10.10.70.110  PTR cs5.skills.com.
+10.10.70.111  PTR cs6.skills.com.
+10.10.70.112  PTR cs7.skills.com.
+
+[root@cs1 named]# chown named:named 70.10.10.in-addr.arpa  skills.com 
+
+[root@cs1 named]# systemctl restart named
+[root@cs1 named]# systemctl enable named
+
+[root@cs1 named]# firewall-cmd --permanent --add-port=53/tcp --add-port=53/udp 
+success
+[root@cs1 named]# firewall-cmd --reload
+

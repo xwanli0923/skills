@@ -1,0 +1,24 @@
+配置samba服务
+[root@cs2 ~]# yum -y install samba samba-client
+
+[root@cs2 ~]# groupadd manager
+[root@cs2 ~]# useradd -G manager -s /sbin/nologin manager1
+[root@cs2 ~]# useradd -G manager -s /sbin/nologin manager2
+[root@cs2 ~]# echo 'Password1234#' | passwd --stdin manager1
+Changing password for user manager1.
+passwd: all authentication tokens updated successfully.
+[root@cs2 ~]# echo 'Password1234#' | passwd --stdin manager2
+Changing password for user manager2.
+passwd: all authentication tokens updated successfully.
+
+添加samba用户
+[root@cs2 ~]# smbpasswd -a manager1
+New SMB password:
+Retype new SMB password:
+Added user manager1.
+[root@cs2 ~]# smbpasswd -a manager2
+New SMB password:
+Retype new SMB password:
+Added user manager2.
+
+
